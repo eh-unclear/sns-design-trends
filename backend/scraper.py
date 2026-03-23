@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import os
 import re
 import sqlite3
@@ -32,6 +33,33 @@ RSS_FEEDS = [
     {"source": "DIGIDAY Japan", "url": "https://digiday.jp/feed/", "lang": "ja"},
     {"source": "MarkeZine", "url": "https://markezine.jp/rss/index.rss", "lang": "ja"},
     {"source": "Web担当者Forum", "url": "https://webtan.impress.co.jp/rss.xml", "lang": "ja"},
+=======
+import feedparser
+import sqlite3
+from database import get_connection
+
+RSS_FEEDS = [
+    {
+        "source": "Dribbble - Advertising",
+        "url": "https://dribbble.com/tags/advertising.rss",
+    },
+    {
+        "source": "Dribbble - Social Media",
+        "url": "https://dribbble.com/tags/social_media.rss",
+    },
+    {
+        "source": "Ads of the World",
+        "url": "https://www.adsoftheworld.com/feed",
+    },
+    {
+        "source": "Creative Bloq",
+        "url": "https://www.creativebloq.com/feeds/all",
+    },
+    {
+        "source": "Smashing Magazine - Design",
+        "url": "https://www.smashingmagazine.com/feed/",
+    },
+>>>>>>> 8bd216d34d891ddd0d48440ec484813dca350529
 ]
 
 
@@ -48,6 +76,10 @@ def extract_thumbnail(entry) -> str | None:
                 return enc.get("url") or enc.get("href")
     summary = getattr(entry, "summary", "") or ""
     if "<img" in summary:
+<<<<<<< HEAD
+=======
+        import re
+>>>>>>> 8bd216d34d891ddd0d48440ec484813dca350529
         m = re.search(r'<img[^>]+src=["\']([^"\']+)["\']', summary)
         if m:
             return m.group(1)
@@ -56,9 +88,13 @@ def extract_thumbnail(entry) -> str | None:
 
 def fetch_all():
     conn = get_connection()
+<<<<<<< HEAD
     translator = get_translator()
     saved = 0
 
+=======
+    saved = 0
+>>>>>>> 8bd216d34d891ddd0d48440ec484813dca350529
     for feed_info in RSS_FEEDS:
         try:
             feed = feedparser.parse(feed_info["url"])
@@ -69,6 +105,7 @@ def fetch_all():
                     continue
                 thumbnail = extract_thumbnail(entry)
                 published = entry.get("published", entry.get("updated", ""))
+<<<<<<< HEAD
                 lang = feed_info["lang"]
 
                 # 日本語記事はそのまま、海外記事はDeepLで翻訳
@@ -91,13 +128,25 @@ def fetch_all():
                         VALUES (?, ?, ?, ?, ?, ?, ?)
                         """,
                         (title, title_ja, link, thumbnail, feed_info["source"], lang, published),
+=======
+                try:
+                    conn.execute(
+                        """
+                        INSERT OR IGNORE INTO posts (title, link, thumbnail, source, published_at)
+                        VALUES (?, ?, ?, ?, ?)
+                        """,
+                        (title, link, thumbnail, feed_info["source"], published),
+>>>>>>> 8bd216d34d891ddd0d48440ec484813dca350529
                     )
                     saved += conn.execute("SELECT changes()").fetchone()[0]
                 except sqlite3.IntegrityError:
                     pass
         except Exception as e:
             print(f"[scraper] Error fetching {feed_info['source']}: {e}")
+<<<<<<< HEAD
 
+=======
+>>>>>>> 8bd216d34d891ddd0d48440ec484813dca350529
     conn.commit()
     conn.close()
     print(f"[scraper] Saved {saved} new posts.")

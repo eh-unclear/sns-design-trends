@@ -4,7 +4,7 @@ from fastapi.responses import FileResponse
 from apscheduler.schedulers.background import BackgroundScheduler
 from pathlib import Path
 from database import init_db, get_connection
-from scraper import fetch_all
+from scraper import fetch_all, get_translator
 
 app = FastAPI()
 
@@ -71,6 +71,32 @@ def get_sources():
 def manual_refresh():
     saved = fetch_all()
     return {"saved": saved}
+
+
+@app.post("/api/translate-all")
+def translate_all():
+    translator = get_translator()
+    if not translator:
+        return {"error": "DEEPL_API_KEY not set"}
+    conn = get_connection()
+    rows = conn.execute(
+        "SELECT id, title FROM posts WHERE title_ja IS NULL AND lang = 'en'"
+    ).fetchall()
+    updated = 0
+    for row in rows:
+        try:
+            result = translator.translate_text(row["title"], target_lang="JA")
+            conn.execute(
+                "UPDATE posts SET title_ja = ? WHERE id = ?",
+                (result.text, row["id"]),
+            )
+            updated += 1
+        except Exception as e:
+            print(f"[translate] Error: {e}")
+            break
+    conn.commit()
+    conn.close()
+    return {"translated": updated}
 
 
 # フロントエンドの静的ファイルを配信
