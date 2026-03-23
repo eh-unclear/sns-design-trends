@@ -8,7 +8,7 @@ from scraper import fetch_all
 
 app = FastAPI()
 
-FRONTEND_DIR = Path(__file__).parent.parent / "frontend"
+FRONTEND_DIR = Path(__file__).parent / "frontend"
 
 # スケジューラー設定（6時間ごとに自動収集）
 scheduler = BackgroundScheduler()
