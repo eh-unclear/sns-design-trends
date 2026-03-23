@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SNS広告デザイントレンド</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+  <style>
+    [x-cloak] { display: none !important; }
+  </style>
+</head>
+<body class="bg-gray-950 text-gray-100 min-h-screen" x-data="app()" x-init="init()" x-cloak>
+
+  <!-- ヘッダー -->
+  <header class="sticky top-0 z-10 bg-gray-900 border-b border-gray-800 px-6 py-4 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <span class="text-2xl font-bold tracking-tight text-white">SNS広告トレンド</span>
+      <span class="text-xs text-gray-500 mt-1">自動収集 · 6時間ごと更新</span>
+    </div>
+    <button
+      @click="refresh()"
+      :disabled="refreshing"
+      class="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-sm font-medium px-4 py-2 rounded-lg transition"
+    >
+      <svg :class="refreshing ? 'animate-spin' : ''" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+      </svg>
+      <span x-text="refreshing ? '収集中...' : '今すぐ収集'"></span>
+    </button>
+  </header>
+
+  <!-- フィルター -->
+  <div class="px-6 py-4 flex gap-2 flex-wrap border-b border-gray-800 bg-gray-900">
+    <button
+      @click="selectSource(null)"
+      :class="selectedSource === null ? 'bg-indigo-600 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'"
+      class="px-3 py-1.5 rounded-full text-sm font-medium transition"
+    >
+      すべて <span class="text-xs opacity-70" x-text="'(' + totalCount + ')'"></span>
+    </button>
+    <template x-for="s in sources" :key="s.source">
+      <button
+        @click="selectSource(s.source)"
+        :class="selectedSource === s.source ? 'bg-indigo-600 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'"
+        class="px-3 py-1.5 rounded-full text-sm font-medium transition"
+        x-text="s.source + ' (' + s.count + ')'"
+      ></button>
+    </template>
+  </div>
+
+  <!-- 通知バナー -->
+  <div x-show="notification" x-transition class="bg-green-800 text-green-100 text-sm text-center py-2" x-text="notification"></div>
+
+  <!-- カードグリッド -->
+  <main class="px-6 py-6">
+    <div x-show="loading" class="flex justify-center py-20">
+      <svg class="animate-spin w-8 h-8 text-indigo-400" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
+      </svg>
+    </div>
+
+    <div x-show="!loading && posts.length === 0" class="text-center text-gray-500 py-20">
+      投稿がありません。「今すぐ収集」を押してください。
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+      <template x-for="post in posts" :key="post.id">
+        <a
+          :href="post.link"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="group bg-gray-900 border border-gray-800 rounded-xl overflow-hidden hover:border-indigo-500 transition flex flex-col"
+        >
+          <!-- サムネイル -->
+          <div class="aspect-video bg-gray-800 overflow-hidden flex items-center justify-center">
+            <img
+              x-show="post.thumbnail"
+              :src="post.thumbnail"
+              :alt="post.title"
+              class="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+              @error="post.thumbnail = null"
+            />
+            <svg x-show="!post.thumbnail" class="w-10 h-10 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+          </div>
+          <!-- テキスト -->
+          <div class="p-3 flex flex-col gap-1 flex-1">
+            <p class="text-sm font-medium text-gray-100 line-clamp-2 leading-snug" x-text="post.title_ja || post.title"></p>
+            <div class="mt-auto flex items-center justify-between">
+              <span class="text-xs text-indigo-400 font-medium" x-text="post.source"></span>
+              <svg class="w-4 h-4 text-gray-600 group-hover:text-indigo-400 transition" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+              </svg>
+            </div>
+          </div>
+        </a>
+      </template>
+    </div>
+
+    <!-- もっと見る -->
+    <div x-show="!loading && hasMore" class="flex justify-center mt-8">
+      <button
+        @click="loadMore()"
+        :disabled="loadingMore"
+        class="bg-gray-800 hover:bg-gray-700 disabled:opacity-50 text-gray-300 px-6 py-2 rounded-lg text-sm transition"
+      >
+        <span x-text="loadingMore ? '読み込み中...' : 'もっと見る'"></span>
+      </button>
+    </div>
+  </main>
+
+  <script>
+    function app() {
+      return {
+        posts: [],
+        sources: [],
+        selectedSource: null,
+        loading: true,
+        loadingMore: false,
+        refreshing: false,
+        notification: '',
+        offset: 0,
+        limit: 50,
+        hasMore: true,
+        totalCount: 0,
+
+        async init() {
+          await Promise.all([this.loadSources(), this.loadPosts()]);
+        },
+
+        async loadSources() {
+          const res = await fetch('/api/sources');
+          this.sources = await res.json();
+          this.totalCount = this.sources.reduce((sum, s) => sum + s.count, 0);
+        },
+
+        async loadPosts(reset = true) {
+          if (reset) {
+            this.loading = true;
+            this.offset = 0;
+            this.posts = [];
+          }
+          const params = new URLSearchParams({ limit: this.limit, offset: this.offset });
+          if (this.selectedSource) params.set('source', this.selectedSource);
+          const res = await fetch('/api/posts?' + params);
+          const data = await res.json();
+          this.posts = reset ? data : [...this.posts, ...data];
+          this.hasMore = data.length === this.limit;
+          this.loading = false;
+        },
+
+        async loadMore() {
+          this.loadingMore = true;
+          this.offset += this.limit;
+          const params = new URLSearchParams({ limit: this.limit, offset: this.offset });
+          if (this.selectedSource) params.set('source', this.selectedSource);
+          const res = await fetch('/api/posts?' + params);
+          const data = await res.json();
+          this.posts = [...this.posts, ...data];
+          this.hasMore = data.length === this.limit;
+          this.loadingMore = false;
+        },
+
+        async selectSource(source) {
+          this.selectedSource = source;
+          await this.loadPosts();
+        },
+
+        async refresh() {
+          this.refreshing = true;
+          const res = await fetch('/api/refresh', { method: 'POST' });
+          const data = await res.json();
+          this.refreshing = false;
+          this.notification = `${data.saved} 件の新しい投稿を収集しました`;
+          await Promise.all([this.loadSources(), this.loadPosts()]);
+          setTimeout(() => this.notification = '', 4000);
+        },
+      };
+    }
+  </script>
+</body>
+</html>
