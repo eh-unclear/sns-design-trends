@@ -73,6 +73,16 @@ def manual_refresh():
     return {"saved": saved}
 
 
+@app.post("/api/reset")
+def reset():
+    conn = get_connection()
+    conn.execute("DELETE FROM posts")
+    conn.commit()
+    conn.close()
+    saved = fetch_all()
+    return {"saved": saved}
+
+
 @app.post("/api/translate-all")
 def translate_all():
     translator = get_translator()
