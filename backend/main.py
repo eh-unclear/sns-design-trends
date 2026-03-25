@@ -83,6 +83,27 @@ def reset():
     return {"saved": saved}
 
 
+@app.get("/api/debug-sample")
+def debug_sample():
+    """DBの最初の3件のtitleとtitle_jaを確認する"""
+    conn = get_connection()
+    rows = conn.execute("SELECT id, title, title_ja, source FROM posts LIMIT 3").fetchall()
+    conn.close()
+    return [dict(row) for row in rows]
+
+
+@app.post("/api/cleanup-bad-data")
+def cleanup_bad_data():
+    """コンフリクトマーカーが混入したデータを削除して再収集"""
+    conn = get_connection()
+    result = conn.execute("DELETE FROM posts WHERE title LIKE '%<<<<<<<<%'")
+    deleted = result.rowcount
+    conn.commit()
+    conn.close()
+    saved = fetch_all()
+    return {"deleted": deleted, "saved": saved}
+
+
 @app.post("/api/translate-all")
 def translate_all():
     translator = get_translator()
