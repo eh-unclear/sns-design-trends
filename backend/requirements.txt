@@ -2,7 +2,4 @@ fastapi==0.115.0
 uvicorn[standard]==0.30.6
 feedparser==6.0.11
 apscheduler==3.10.4
-<<<<<<< HEAD
 deepl==1.18.0
-=======
->>>>>>> 8bd216d34d891ddd0d48440ec484813dca350529
