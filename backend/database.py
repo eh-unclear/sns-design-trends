@@ -19,22 +19,15 @@ def init_db():
         CREATE TABLE IF NOT EXISTS posts (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             title TEXT NOT NULL,
-<<<<<<< HEAD
             title_ja TEXT,
             link TEXT NOT NULL UNIQUE,
             thumbnail TEXT,
             source TEXT NOT NULL,
             lang TEXT DEFAULT 'en',
-=======
-            link TEXT NOT NULL UNIQUE,
-            thumbnail TEXT,
-            source TEXT NOT NULL,
->>>>>>> 8bd216d34d891ddd0d48440ec484813dca350529
             published_at TEXT,
             created_at TEXT DEFAULT (datetime('now'))
         )
     """)
-<<<<<<< HEAD
     # 既存DBへのマイグレーション
     try:
         conn.execute("ALTER TABLE posts ADD COLUMN title_ja TEXT")
@@ -44,7 +37,5 @@ def init_db():
         conn.execute("ALTER TABLE posts ADD COLUMN lang TEXT DEFAULT 'en'")
     except Exception:
         pass
-=======
->>>>>>> 8bd216d34d891ddd0d48440ec484813dca350529
     conn.commit()
     conn.close()
